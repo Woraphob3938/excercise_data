@@ -15,7 +15,7 @@ import {
   Filler
 } from "chart.js";
 import { TrendingUp, Award, Dumbbell, BarChart3, HelpCircle } from "lucide-react";
-import { calculate1RM } from "../utils/fitness";
+import { calculate1RM, recommendOverload } from "../utils/fitness";
 
 // Register Chart.js modules
 ChartJS.register(
@@ -143,6 +143,12 @@ export default function AnalyticsView({ history }) {
       totalSets
     };
   }, [trendData]);
+
+  // Calculate Progressive Overload next-session recommendation
+  const recommendation = useMemo(() => {
+    if (!selectedExercise || history.length === 0) return null;
+    return recommendOverload(history, selectedExercise);
+  }, [history, selectedExercise]);
 
   // Chart configuration for 1RM / Max Weight Trend
   const strengthChartData = useMemo(() => {
@@ -289,6 +295,29 @@ export default function AnalyticsView({ history }) {
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Progressive Overload Recommendation Card */}
+          {recommendation && (
+            <div className="bg-emerald-50/30 border border-emerald-100/50 rounded-2xl p-4 flex gap-3 items-start animate-fadeIn">
+              <Award className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                  คำแนะนำสำหรับการฝึกครั้งถัดไป (Next-Session Recommendation)
+                </h3>
+                <div className="mt-1 flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    {recommendation.badge}
+                  </span>
+                  <span className="text-sm font-black text-slate-800">
+                    เป้าหมายแนะนำ: {recommendation.targetWeight} kg x {recommendation.targetReps} ครั้ง
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  {recommendation.message}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* PR Summary Cards */}
           {achievements && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

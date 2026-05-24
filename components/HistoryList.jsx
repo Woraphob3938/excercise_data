@@ -22,16 +22,18 @@ export default function HistoryList({ history, onDeleteWorkout }) {
     }
   };
 
-  // Filter history based on search term (checks workout name, or exercise names)
-  const filteredHistory = history.filter((log) => {
-    if (!searchTerm.trim()) return true;
-    const term = searchTerm.toLowerCase();
-    const matchesName = log.name.toLowerCase().includes(term);
-    const matchesExercise = log.exercises.some((ex) =>
-      ex.name.toLowerCase().includes(term)
-    );
-    return matchesName || matchesExercise;
-  });
+  // Filter history based on search term and sort by date descending (newest first)
+  const filteredHistory = history
+    .filter((log) => {
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+      const matchesName = log.name.toLowerCase().includes(term);
+      const matchesExercise = log.exercises.some((ex) =>
+        ex.name.toLowerCase().includes(term)
+      );
+      return matchesName || matchesExercise;
+    })
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
