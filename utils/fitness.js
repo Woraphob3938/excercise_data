@@ -41,13 +41,17 @@ export function checkNewPR(history, exerciseName, weight, reps) {
 
   // Extract all past sets for this exercise (excluding the current one, assuming it's not yet in history)
   history.forEach(log => {
-    if (log.exercise.trim().toLowerCase() === normalizedName && log.sets) {
-      log.sets.forEach(set => {
-        pastSets.push({
-          weight: parseFloat(set.weight) || 0,
-          reps: parseInt(set.reps, 10) || 0,
-          oneRM: calculate1RM(set.weight, set.reps)
-        });
+    if (log.exercises && Array.isArray(log.exercises)) {
+      log.exercises.forEach(ex => {
+        if (ex.name && ex.name.trim().toLowerCase() === normalizedName && ex.sets) {
+          ex.sets.forEach(set => {
+            pastSets.push({
+              weight: parseFloat(set.weight) || 0,
+              reps: parseInt(set.reps, 10) || 0,
+              oneRM: calculate1RM(set.weight, set.reps)
+            });
+          });
+        }
       });
     }
   });
@@ -92,18 +96,32 @@ export function recommendOverload(history, exerciseName) {
   }
 
   const normalizedName = exerciseName.trim().toLowerCase();
+  const matches = [];
   
-  // Find all logs of this exercise and sort them by date descending (most recent first)
-  const exerciseLogs = history
-    .filter(log => log.exercise.trim().toLowerCase() === normalizedName)
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  // Find all workout sessions that contain this exercise
+  history.forEach(log => {
+    if (log.exercises && Array.isArray(log.exercises)) {
+      const ex = log.exercises.find(
+        e => e.name && e.name.trim().toLowerCase() === normalizedName
+      );
+      if (ex && ex.sets && ex.sets.length > 0) {
+        matches.push({
+          date: log.date,
+          sets: ex.sets
+        });
+      }
+    }
+  });
 
-  if (exerciseLogs.length === 0) {
+  if (matches.length === 0) {
     return defaultRec;
   }
 
+  // Sort by date descending (most recent first)
+  matches.sort((a, b) => new Date(b.date) - new Date(a.date));
+
   // Get the most recent session's sets
-  const lastSession = exerciseLogs[0];
+  const lastSession = matches[0];
   const lastSets = lastSession.sets || [];
   
   if (lastSets.length === 0) {
@@ -181,11 +199,15 @@ export function getStatsSummary(history) {
     if (log.date) {
       uniqueDates.add(log.date.split('T')[0]);
     }
-    if (log.sets) {
-      totalSets += log.sets.length;
-      log.sets.forEach(set => {
-        if (set.isPR || set.isWeightPR || set.is1rmPR) {
-          prCount++;
+    if (log.exercises && Array.isArray(log.exercises)) {
+      log.exercises.forEach(ex => {
+        if (ex.sets && Array.isArray(ex.sets)) {
+          totalSets += ex.sets.length;
+          ex.sets.forEach(set => {
+            if (set.isWeightPR || set.is1rmPR) {
+              prCount++;
+            }
+          });
         }
       });
     }
